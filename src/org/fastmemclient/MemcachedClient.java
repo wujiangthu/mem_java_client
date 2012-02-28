@@ -1,76 +1,57 @@
 package org.fastmemclient;
-import java.io.*;
-import java.net.*;
+
+import java.util.*;
 
 public class MemcachedClient {
-	private String server;
-	private String port;
-	private Socket socket;
-	BufferedReader in;
-	PrintWriter out;
+	private Vector<Server> serverList;
 	
-public MemcachedClient(String ip, String port){
-	server=ip;
-	this.port=port;
-	connect(ip, port);
+public MemcachedClient(){
+	serverList = new Vector<Server>();
+}
+
+public void AddServer(String ip, Integer port){
+	serverList.add(new Server(ip, port));
+}
+
+private Client getClient(){
+	Server server = selectServer();
+	Client client = server.selectClient();
+	return client;
+}
+
+private Server selectServer(){
+	/*should use hash, now just return the first one*/
+	return serverList.firstElement();
 }
 
 public void set(String key, String value){
 	String command = "set"+" "+key+" "+24+" "+0+" "+value.length()+"\r\n";
 	String data= value+"\r\n";
-	out.print(command);
-	out.print(data);
-	out.flush();
-	try {
-		String response=in.readLine();
-		System.out.println("response of set command:"+response);
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	
-	
+	Client client = getClient();
+	client.send(command);
+	client.send(data);
+	String response = client.receive();
+	System.out.println("response of set command:"+response);
+	client.close();
 }
 
-public void get(String key){
+public String get(String key){
 	String command = "get "+key+"\r\n";
-	out.print(command);
-	out.flush();
-	try {
-		System.out.println(in.readLine());
-		System.out.println(in.readLine());
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	
-}
-
-private void connect(String ip, String port){
-    System.out.println("here12345678");
-	try {
-		socket = new Socket(ip, Integer.valueOf(port));
-		in =new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		out = new PrintWriter(socket.getOutputStream(),true);
-		
-		
-	} catch (NumberFormatException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (UnknownHostException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	
+	Client client = getClient(); 
+	client.send(command);            /*send commend to server*/
+	String firstReceiveData = client.receive();
+	String secondReceiveData = client.receive();
+	System.out.println(firstReceiveData);
+	System.out.println(secondReceiveData);
+	client.close();
+	return secondReceiveData;
 }
 
 public static void main(String argv[]){
-	MemcachedClient client= new MemcachedClient("192.168.1.101","11211");
-	client.set("myname","wujiang");
-	client.get("myname");
+	MemcachedClient client= new MemcachedClient();
+	client.AddServer("192.168.1.101",11211);
+	client.set("youname","nobody");
+	client.get("youname");
 }
 
 }
