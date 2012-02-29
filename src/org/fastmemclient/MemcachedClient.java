@@ -3,23 +3,25 @@ package org.fastmemclient;
 import java.util.*;
 
 public class MemcachedClient {
-	private Vector<Server> serverList;
+	private static Vector<Server> serverList = null;
 	
 public MemcachedClient(){
-	serverList = new Vector<Server>();
+	if(null == serverList){
+	  serverList = new Vector<Server>();
+	  }
 }
 
 public void AddServer(String ip, Integer port){
 	serverList.add(new Server(ip, port));
 }
 
-private Client getClient(){
-	Server server = selectServer();
+private Client getClient(String key){
+	Server server = selectServer(key);
 	Client client = server.selectClient();
 	return client;
 }
 
-private Server selectServer(){
+private Server selectServer(String key){
 	/*should use hash, now just return the first one*/
 	return serverList.firstElement();
 }
@@ -27,7 +29,7 @@ private Server selectServer(){
 public void set(String key, String value){
 	String command = "set"+" "+key+" "+24+" "+0+" "+value.length()+"\r\n";
 	String data= value+"\r\n";
-	Client client = getClient();
+	Client client = getClient(key);
 	client.send(command);
 	client.send(data);
 	String response = client.receive();
@@ -37,7 +39,7 @@ public void set(String key, String value){
 
 public String get(String key){
 	String command = "get "+key+"\r\n";
-	Client client = getClient(); 
+	Client client = getClient(key); 
 	client.send(command);            /*send commend to server*/
 	String firstReceiveData = client.receive();
 	String secondReceiveData = client.receive();
@@ -45,6 +47,16 @@ public String get(String key){
 	System.out.println(secondReceiveData);
 	client.close();
 	return secondReceiveData;
+}
+
+public void delete(String key){
+	/*consider using enum or contant to replace hard code for command*/
+	String command = "delete"+" "+key+" "+"\r\n";
+	Client client = getClient(key); 
+	client.send(command);    
+	String response = client.receive();
+	System.out.println("response of delete command:"+response);
+	client.close();	
 }
 
 public static void main(String argv[]){

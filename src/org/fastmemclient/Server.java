@@ -1,7 +1,5 @@
 package org.fastmemclient;
 
-import java.io.IOException;
-import java.net.*;
 import java.util.*;
 
 public class Server {
