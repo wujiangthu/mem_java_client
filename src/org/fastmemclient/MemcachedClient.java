@@ -59,11 +59,23 @@ public void delete(String key){
 	client.close();	
 }
 
+public void cas(String key, String value, Integer cas){
+	String command = "cas"+" "+key+" "+24+" "+0+" "+value.length()+" "+cas+" "+"\r\n";
+	String data= value+"\r\n";
+	Client client = getClient(key);
+	client.send(command);
+	client.send(data);
+	String response = client.receive();
+	System.out.println("response of set command:"+response);
+	client.close();
+}
+
 public static void main(String argv[]){
 	MemcachedClient client= new MemcachedClient();
 	client.AddServer("192.168.1.101",11211);
-	client.set("youname","nobody");
-	client.get("youname");
+	//client.set("youname","nobody");
+	//client.get("youname");
+	client.cas("key", "ok", 6);
 }
 
 }
